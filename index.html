@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mars Drone Exploration VR</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://unpkg.com/aframe-aabb-collider-component@3.1.0/dist/aframe-aabb-collider-component.min.js"></script>    
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <script src="/joystick.js"></script>
+    <script src="/joystickvr.js"></script>
+    <script src="/joystickvr2.js"></script>
+    <script src="/extended-wasd-controls.js"></script>
+    <script src="/logic.js"></script> 
+    <script src="simple-navmesh.js"></script>
+    
+    <script src="script.js" defer></script>
+    <script src="https://unpkg.com/aframe-terrain-model-component@1.0.1/dist/aframe-terrain-model-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/diarmidmackenzie/aframe-multi-camera@latest/src/multi-camera.min.js"></script>
+  
+    <link rel="stylesheet" href="/style.css" />  
+  </head>
+  
+  <body>
+    
+    <img id="marsbg" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/mars.jpg?v=1669775200414">
+    
+    <!-- Loading Screen -->
+    
+    <div id="loading" style="display: block;">
+      <div id="screen1" class="screen">
+        <p class="inst">
+          <strong>Welcome to the first Mars station!</strong><br><br>
+          You are one of the researchers in charge of the drone tasks and exploration.<br>
+          Last night, one of our drones got lost in a a sandstorm and cannot establish connection
+          with it. We deployed a search using the land rovers but were not able to locate it. The location
+          is uncertain but narrowed down three possible areas where it might have landed.<br><br>
+          Since the terrain is difficult to explore by foot and our rovers cant access it you
+          are now tasked with finding it with one of our other drones.
+        </p>
+        <button id="next1" onclick="goscreen2()" class="btn" style="display: block;">
+          Next
+        </button>
+      </div>
+      <div id="screen2" class="screen" style="display: none;">
+        <p class="inst">
+          Once you are ready to begin your mission you can enter VR using the button in the lower corner. <br><br>
+          Your drone is equipped with a camera and you can see the feed in the screen along with a
+          navigation interface that points you towards the possible crash sites.<br><br>
+          Use your controllers to guide de drone over the martian terrain in the Gale Crater and
+          find our missing drone!<br>
+          Make sure to keep a high altitude to better see the area and once you found a spot
+          descend to have a better look at the area. Use the stick on your left hand controller to move the drone
+          around and the stick on your right hand to control the height.
+        </p>
+        <button id="startbtn" onclick="startexp()" class="btn" style="pointer-events: none; color: #BBB;">
+          Loading...
+        </button>
+      </div>
+    </div>
+    
+    <!-- Joystick -->
+    
+    <div id="uiDiv" class="mainUI"
+      oncontextmenu="return false;"
+      style="z-index: 40; display: none;">
+      
+      <!-- top-left -->
+      <div class="regionUI" style="top: 10px; left: 10px;" oncontextmenu="return false;"></div>
+
+      <!-- top-right -->
+      <div class="regionUI" style="top: 10px; left: 10px;"></div>
+
+      <!-- bottom-left -->
+      <div class="regionUI" style="bottom: 30px; left: 30px;">
+        <div class="buttonUI" style="width: 128px; opacity:0.80;">
+          <img
+            src="https://cdn.glitch.global/83972b21-2853-4e50-aa1e-5000a0918fd7/JoystickBase2.png?v=1657193647880"/>
+          <div id="stick1" style="position: absolute; left:32px; top:32px;">
+            <img
+              src="https://cdn.glitch.com/0a819ffd-18ae-4735-ad12-519cb04a6afa%2Fjoystick-blue.png?v=1614803572752"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- bottom-right -->
+      <div class="regionUI" style="bottom: 30px; right: 100px;">
+      <div class="buttonUI" style="width: 128px; opacity:0.80;">
+          <img
+            src="https://cdn.glitch.global/83972b21-2853-4e50-aa1e-5000a0918fd7/JoystickBase2.png?v=1657193647880"/>
+          <div id="stick2" style="position: absolute; right:32px; top:32px;">
+            <img
+              src="https://cdn.glitch.com/0a819ffd-18ae-4735-ad12-519cb04a6afa%2Fjoystick-blue.png?v=1614803572752"/>
+          </div>
+        </div></div>
+    </div>
+
+    <!-- Scene  -->
+    
+    <a-scene vr-mode-ui="" renderer="colorManagement: true" logic
+             platform ui screen-controls="speedlimiter: .8;"
+             background="color: #ccae9c"
+             device-orientation-permission-ui="enabled: true; deviceMotionMessage: Please enable camera and device orientation permissions to enjoy this experience!;"
+             fog="color: #cc9e85; density: 0.006; type: exponential">
+      <a-assets timeout="30000">
+        <a-asset-item id="model" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/IngenuityAnimated.glb?v=1661295722807"></a-asset-item>
+        <a-asset-item id="Pod" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/PodStation.glb?v=1661916088045"></a-asset-item>
+        <audio id="Selection" src="https://cdn.glitch.global/83972b21-2853-4e50-aa1e-5000a0918fd7/Selection.wav?v=1655739006858" crossorigin="anonymous"></audio>
+        <audio id="Ambient" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Ambient.mp3?v=1669801312919" crossorigin="anonymous"></audio>
+        <audio id="Cant" src="https://cdn.glitch.global/83972b21-2853-4e50-aa1e-5000a0918fd7/CoinClick.mp3?v=1656090308817" crossorigin="anonymous"></audio>
+        <audio id="Success" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Success.mp3?v=1661912351987" crossorigin="anonymous"></audio>        
+        <audio id="Message" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/SoundUp.mp3?v=1661912206517" crossorigin="anonymous"></audio>                
+        <audio id="Intro" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Intro.mp3?v=1669801315447" crossorigin="anonymous"></audio>        
+        <audio id="A" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/A.mp3?v=1669801299224" crossorigin="anonymous"></audio>        
+        <audio id="B" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/B.mp3?v=1669801313435" crossorigin="anonymous"></audio>        
+        <audio id="W1" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/W1.mp3?v=1669801315892" crossorigin="anonymous"></audio>        
+        <audio id="W2" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/W2.mp3?v=1669801296645" crossorigin="anonymous"></audio>        
+        <audio id="W3" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/W3.mp3?v=1669801297603" crossorigin="anonymous"></audio>        
+        <audio id="Found" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Found.mp3?v=1669801314344" crossorigin="anonymous"></audio>
+        <img id="ScreenTexture" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/ScreenTexture.png?v=1669778142092" crossorigin="anonymous">
+      </a-assets>
+      
+      <a-entity id="rig" position="0 2 -3.07"
+                movement-controls="speed: 0.3; constrainToNavMesh: false"
+                touch-controls="enabled: false;"
+                >
+      
+        <a-entity id="droneobject" camera="active: false;" position="0 0 0"
+                  extended-wasd-controls="flyEnabled: true; inputType: joystick;" touch-controls="enabled: false;" 
+                  cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .cantap;">
+          <a-entity id="drone" rotation="-90 0 0">
+            <a-entity gltf-model="#model" fix scale=".5 .5 .5" animation-mixer="clip: *; loop: true;" rotation="90 0 0"></a-entity>
+            <a-entity id="dectector" geometry="" material="transparent: true; alphaTest: .5; opacity: 0" aabb-collider="objects: .colliders"></a-entity>
+            <a-entity id="secondary-camera1" secondary-camera="output:plane; outputElement:#texture-plane1; sequence:before">
+              <a-entity id="arrows" position=".05 0 -1.25" visible="true">
+                <a-cylinder scale="5 5 .1" rotation="90 0 0" position="-.25 -.3 0" material="opacity: 0; transparent: false; side: back;" radius=".6"></a-cylinder>
+                <a-entity id="arrow1" position=".35 0 0" look-at="#drone1">
+                  <a-cone height="3.5" scale="0.025 0.025 0.025" rotation="90 0 0" material="color:  #0fa3ff; transparent: true; alphaTest: .5;"></a-cone>
+                </a-entity>
+                <a-entity id="arrow2" position="-.5 0 0" look-at="#drone2">
+                  <a-cone height="3.5" scale="0.025 0.025 0.025" rotation="90 0 0" material="color:  #0fa3ff; transparent: true; alphaTest: .5;"></a-cone>
+                </a-entity>
+                <a-entity id="arrow3" position="0 .35 0" look-at="#drone3">
+                  <a-cone height="3.5" scale="0.025 0.025 0.025" rotation="90 0 0" material="color:  #0fa3ff; transparent: true; alphaTest: .5;"></a-cone>
+                </a-entity>
+              </a-entity>
+            </a-entity>
+          </a-entity>          
+        </a-entity>        
+        
+      </a-entity>
+      
+      <!-- Camera -->
+      
+      <a-camera>
+      <!-- Audio -->
+        <a-sound id="selection" src="#Selection"></a-sound>
+        <a-sound id="ambient" autoplay="false" loop="true" src="#Ambient"></a-sound>
+        <a-sound id="cant" src="#Cant"></a-sound>
+        <a-sound id="success" src="#Success"></a-sound>
+        <a-sound id="intro" src="#Intro"></a-sound>        
+        <a-sound id="a" src="#A"></a-sound>
+        <a-sound id="b" src="#B"></a-sound>
+        <a-sound id="w1" src="#W1"></a-sound>
+        <a-sound id="w2" src="#W2"></a-sound>
+        <a-sound id="w3" src="#W3"></a-sound>
+        <a-sound id="found" src="#Found"></a-sound>
+      </a-camera>
+      
+      <a-entity id="oculuscontrols">
+        <a-entity id="stickleft" oculus-touch-controls="hand: left" thumb-controls="hand: left" 
+                    thumb-controls-debug="enabled: true; controllerType: oculus" laser-controls="hand: left" 
+                    raycaster="objects: .cantap; far: 500" oculus-left
+                    animation__leftray="dur: 3000; dir: alternate; loop: true; easing: linear; from: #ff1443; to: #ff9214; property: raycaster.lineColor;">
+        </a-entity>
+        <a-entity id="stickright" oculus-touch-controls="hand: right" thumb-controls="hand: right" 
+                    thumb-controls-debug="enabled: true; controllerType: oculus" laser-controls="hand: right" 
+                    raycaster="objects: .cantap; far: 500" thumbstick-logging
+                    animation__rightray="dur: 3000; dir: alternate; loop: true; easing: linear; from: #1499ff; to: #c014ff; property: raycaster.lineColor;">
+        </a-entity>
+      </a-entity>
+      
+      <!-- Console -->
+      
+      <a-entity id="console" position="0 .25 -1">
+        <a-plane id="consolescreen" width="2.25" height=".88" position=".18 .992 -.007" rotation="-15 0 0" 
+                 material="src: #ScreenTexture; transparent: true; alphaTest: .5; shader: flat; opacity: .7">
+        </a-plane>
+        <a-plane id="feedscreen" position="0 1 0" scale=".8 .8 .8" rotation="-15 0 0" width="1" height="1"
+                 material="color: #064a74">
+          <a-plane id="texture-plane1" position="0 0 .01" scale=".9 .9 .9" rotation="0 0 0" width="1" height="1"
+                   src="#test-texture" material="shader:flat">
+          </a-plane>
+        </a-plane>
+        
+        <a-plane id="infoscreen" position="0 .69 .36" scale=".2 .2 .2" rotation="-30 0 0" width="4" height="1"
+                 material="color: #064a74; src: #ScreenTexture; opacity: .9">
+          <a-text id="info" text="align: center; width: 5; value: Info;" position="0 .25 .01"></a-text>
+          <a-text id="prompt" text="align: center; width: 3; value: Info will be displayed here. Take off into the crater.;" position="0 -.05 .01"></a-text>        
+          <a-sound id="message" src="#Message"></a-sound>
+        </a-plane>
+        
+        <a-plane id="altitudescreen" position="-.7 1 0" scale=".8 .8 .8" rotation="-15 0 0" width=".5" height="1"
+                 material="color: #064a74; opacity: .9">
+          <a-text id="height" text="align: center; width: 2; value: Altitude;" position="0 .4 .01"></a-text>
+          <a-entity position="0 -.35 .01">
+            <a-entity id="max" position="0 .6 0" geometry="primitive: plane; width: .2; height: .01;" material="color: #ffffff"></a-entity>
+            <a-entity id="droneui" position="0 0 0" geometry="primitive: circle; radius: .01;" material="color: #ffffff">
+              <a-entity geometry="primitive: ring; radiusInner: .015; radiusOuter: .02;" material="color: #ffffff"></a-entity>
+            </a-entity>            
+            <a-entity id="mid1" position="0 .46 0" geometry="primitive: plane; width: .15; height: .005;" material="color: #ffffff"></a-entity>            
+            <a-entity id="mid2" position="0 .36 0" geometry="primitive: plane; width: .15; height: .005;" material="color: #ffffff"></a-entity>
+            <a-entity id="min" position="0 -.01 0" geometry="primitive: plane; width: .2; height: .01;" material="color: #ffffff"></a-entity>
+          </a-entity>
+        </a-plane>
+        
+        <a-entity id="mapscreen" position=".85 1 0" scale=".8 .8 .8" rotation="-15 0 0" geometry="primitive: plane;" material="color: #064a74">
+          <a-entity id="map" position="0 0 .005" scale=".9 .9 .9" rotation="0 0 90" geometry="primitive: plane;" material="src: url(https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Gale.jpg?v=1661302874096);">
+            <a-entity position="-0.180 0.289 .004" rotation="0 0 114">
+              <a-entity id="dronemap" position="0 0 0" geometry="primitive: circle; radius: .01;" material="color: #ffffff">
+               <a-entity geometry="primitive: ring; radiusInner: .015; radiusOuter: .02;" material="color: #064a74"></a-entity>
+              </a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+      
+      <!-- Texture -->
+        
+      <img id="test-texture" src="https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/test.jpg?v=1661912956811" crossorigin="anonymous"/>
+      
+      <!-- Lights -->
+      
+      <a-entity light="color: #ffdfb3; type: ambient"></a-entity>
+      <a-entity light="color: #ff622e; intensity: 0.6; castShadow: true" position="-1.65 2.61 8.5"></a-entity>
+      
+      <!-- <a-sky src="#Sky"></a-sky> -->
+      <!-- Pod -->
+      <a-entity id="pod" gltf-model="#Pod" position="0 0 3.5" rotation="0 180 0">
+        <a-light type="point" position="-2.45 3 3.148"></a-light>
+      </a-entity>
+      
+      <!-- Bounds -->
+      <a-cylinder class="colliders" id="base" position="0 10 .95" geometry="height: 19.5; radius: 3" scale="2.5 1 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-cylinder>    
+      <a-plane class="colliders" pushup position="0 21 3.5" rotation="90 0 0" scale="15 15 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+      <a-plane class="colliders" pushback position="0 10.5 11" rotation="0 0 0" scale="15 21 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+      <a-plane class="colliders" pushright position="-7.5 10.5 3.5" rotation="0 90 0" scale="15 21 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+      <a-plane class="colliders" pushleft position="7.5 10.5 3.5" rotation="0 90 0" scale="15 21 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+      
+      <a-entity id="walls" position="-15 0 -328">
+        <a-plane class="colliders" pushfront position="0 110 350" rotation="0 0 0" scale="700 220 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+        <a-plane class="colliders" wallpushback position="0 110 -350" rotation="0 0 0" scale="700 220 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+        <a-plane class="colliders" wallpushleft position="300 110 0" rotation="0 90 0" scale="700 220 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+        <a-plane class="colliders" wallpushright position="-300 110 0" rotation="0 90 0" scale="700 220 1" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+      </a-entity>
+      
+      <!-- CONTENT -->
+      <a-entity id="content" position="0 -1 0">
+        
+        <!-- Bounds -->
+        <a-plane id="ceiling" class="colliders" position="-15 220 -328" rotation="90 146.674 0" scale="1000 1000 500" material="transparent: true; alphaTest: .5; opacity: 0;"></a-plane>
+        
+        <!-- Terrain -->
+        <a-entity id="terrain"
+          position="-15 -7.5 -328" rotation="0 146.674 0" scale="1 1 1"
+          terrain-model="dem: url(https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Gale_HRSC_DEM_50m_300x285.bin?v=1661302272772);
+            map: url(https://cdn.glitch.global/aea488f7-3d41-449c-bc55-c091d9e662fd/Gale.jpg?v=1661302874096);
+            planeWidth: 1000;
+            planeHeight: 950;
+            segmentsWidth: 299;
+            segmentsHeight: 284;
+            zPosition: 100;">
+        </a-entity>
+
+        <!-- Indicators -->
+
+        <a-entity id="indicator1" position="167 8 -160" rotation="-90 0 0" scale="20 20 20">
+          <a-entity animation="dur: 3000; property: scale; from: 1 1 1; to: 0 0 0; loop: true;" position="0 0 -0.114">
+            <a-entity class="rings1" geometry="primitive: ring" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+            <a-entity class="rings1" geometry="primitive: ring; radiusInner: .4; radiusOuter: .6;" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+          </a-entity>
+          <a-cylinder class="colliders" id="collider1" rotation="90 0 0" geometry="primitive: cylinder; height: 2;" material="transparent: true; alphaTest: 0.5; opacity: 0;"></a-cylinder>
+          <a-entity class="drones" id="drone1" gltf-model="#model" position="0 0 -.41" rotation="90 0 0" scale=".05 .05 .05" visible="false"></a-entity>
+        </a-entity>
+
+        <a-entity id="indicator2" position="-249.5 17 -387" rotation="-90 0 0" scale="20 20 20">
+          <a-entity animation="dur: 3000; property: scale; from: 1 1 1; to: 0 0 0; loop: true;" position="0 0 .402">
+            <a-entity class="rings2" geometry="primitive: ring" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+            <a-entity class="rings2" geometry="primitive: ring; radiusInner: .4; radiusOuter: .6;" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+          </a-entity>
+          <a-cylinder class="colliders" id="collider2" rotation="90 0 0" geometry="primitive: cylinder; height: 2;" material="transparent: true; alphaTest: 0.5; opacity: 0;"></a-cylinder>
+          <a-entity class="drones" id="drone2" gltf-model="#model" position="0 0 -.56" rotation="90 0 0" scale=".05 .05 .05" visible="false"></a-entity>
+        </a-entity>
+
+        <a-entity id="indicator3" position="-35.5 84 -327" rotation="-90 0 0" scale="20 20 20">
+          <a-entity animation="dur: 3000; property: scale; from: 1 1 1; to: 0 0 0; loop: true;" position="0 0 .17">
+            <a-entity class="rings3" geometry="primitive: ring" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+            <a-entity class="rings3" geometry="primitive: ring; radiusInner: .4; radiusOuter: .6;" material="color: #00aaff; side: front; opacity: 1;">
+            </a-entity>
+          </a-entity>
+          <a-cylinder class="colliders" id="collider3" rotation="90 0 0" geometry="primitive: cylinder; height: 2;" material="transparent: true; alphaTest: 0.5; opacity: 0;"></a-cylinder>
+          <a-entity class="drones" id="drone3" gltf-model="#model" position="0 0 -0.593" rotation="46 -133 -107" scale=".05 .05 .05" visible="false"></a-entity>
+        </a-entity>
+
+
+        <a-cylinder id="floor" bumpup class="floor colliders" geometry="height: 1; radius: 1000" material="transparent: true; alphaTest: .5; opacity: 0;" position="0 1 0"></a-cylinder>
+      </a-entity>
+    </a-scene>
+    
+  </body>
+  
+</html>
